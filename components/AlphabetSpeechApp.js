@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Shuffle, Bookmark, BookmarkCheck } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Switch } from '../components/ui/switch';
+import { Label } from '../components/ui/label';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
 
 export const AlphabetSpeechApp = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
