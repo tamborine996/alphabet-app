@@ -1,7 +1,9 @@
+import { AlphabetSpeechApp } from '../components/AlphabetSpeechApp';
+
 export default function Home() {
   return (
-    <div className="p-4">
-      <h1>Hello World</h1>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <AlphabetSpeechApp />
     </div>
   );
 }
