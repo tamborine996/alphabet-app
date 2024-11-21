@@ -1,9 +1,12 @@
 import { AlphabetSpeechApp } from '../components/AlphabetSpeechApp';
 
-export default function Home() {
+const Home = () => {
+  console.log('Home page rendering');
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <AlphabetSpeechApp />
     </div>
   );
-}
+};
+
+export default Home;
