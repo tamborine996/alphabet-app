@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Shuffle, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Shuffle, Bookmark, Check as BookmarkCheck } from 'lucide-react';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
