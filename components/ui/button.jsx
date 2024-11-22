@@ -1,17 +1,16 @@
+'use client';
+
 import * as React from "react";
 
-const Card = React.forwardRef(({ className, ...props }, ref) => (
-  <div
+export const Button = React.forwardRef(({ className, ...props }, ref) => (
+  <button
     ref={ref}
-    className="rounded-lg border bg-white text-gray-950 shadow-sm transition-all hover:shadow-md"
+    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-900 text-gray-50 hover:bg-gray-900/90 active:scale-95 px-4 py-2 sm:px-6 sm:py-3"
     {...props}
   />
 ));
-Card.displayName = "Card";
 
-const CardContent = React.forwardRef(({ className, ...props }, ref) => (
-  <div ref={ref} className="p-4 sm:p-6" {...props} />
-));
-CardContent.displayName = "CardContent";
+Button.displayName = "Button";
 
-export { Card, CardContent };
+// Add this default export
+export default Button;
