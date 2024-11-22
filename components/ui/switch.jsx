@@ -1,15 +1,17 @@
 import * as React from "react";
-import * as SwitchPrimitives from "@radix-ui/react-switch";
 
-const Switch = React.forwardRef(({ className, ...props }, ref) => (
-  <SwitchPrimitives.Root
-    className="peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-blue-500 data-[state=unchecked]:bg-gray-200"
-    {...props}
+const Card = React.forwardRef(({ className, ...props }, ref) => (
+  <div
     ref={ref}
-  >
-    <SwitchPrimitives.Thumb className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0" />
-  </SwitchPrimitives.Root>
+    className="rounded-lg border bg-white text-gray-950 shadow-sm transition-all hover:shadow-md"
+    {...props}
+  />
 ));
-Switch.displayName = "Switch";
+Card.displayName = "Card";
 
-export { Switch };
+const CardContent = React.forwardRef(({ className, ...props }, ref) => (
+  <div ref={ref} className="p-4 sm:p-6" {...props} />
+));
+CardContent.displayName = "CardContent";
+
+export { Card, CardContent };
