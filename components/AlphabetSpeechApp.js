@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Shuffle, Bookmark, Check as BookmarkCheck } from 'lucide-react';
-import { Switch } from '../components/ui/switch';
-import { Label } from '../components/ui/label';
-import { Button } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
+import { Switch } from './ui/switch';
+import { Label } from './ui/label';
+import { Button } from './ui/button';
+import { Card, CardContent } from './ui/card';
 
 export const AlphabetSpeechApp = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -92,14 +92,14 @@ export const AlphabetSpeechApp = () => {
   };
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="text-3xl font-bold text-center mb-8">Speaking Alphabet</h1>
+    <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8">
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 text-gray-800">Speaking Alphabet</h1>
       <Card>
         <CardContent>
-          <div className="flex flex-col items-center p-4">
-            <div className="w-full flex justify-between items-center mb-6">
-              <div className="flex items-center space-x-4">
-                <Label htmlFor="case-switch" className="text-lg font-medium">
+          <div className="flex flex-col items-center space-y-6">
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="flex items-center justify-between sm:justify-start space-x-4">
+                <Label htmlFor="case-switch" className="text-lg font-medium whitespace-nowrap">
                   {isUpperCase ? 'UPPERCASE' : 'lowercase'}
                 </Label>
                 <Switch
@@ -108,8 +108,8 @@ export const AlphabetSpeechApp = () => {
                   onCheckedChange={setIsUpperCase}
                 />
               </div>
-              <div className="flex items-center space-x-4">
-                <Label htmlFor="bookmark-switch" className="text-lg font-medium">
+              <div className="flex items-center justify-between sm:justify-end space-x-4">
+                <Label htmlFor="bookmark-switch" className="text-lg font-medium whitespace-nowrap">
                   Bookmarks Only
                 </Label>
                 <Switch
@@ -128,21 +128,29 @@ export const AlphabetSpeechApp = () => {
               <button
                 onClick={handlePrevious}
                 disabled={currentFilteredIndex === 0}
-                className={`p-4 rounded-full ${currentFilteredIndex === 0 ? 'text-gray-300' : 'text-blue-500 hover:bg-blue-50'}`}
+                className={`p-4 rounded-full transition-all ${
+                  currentFilteredIndex === 0 
+                    ? 'text-gray-300 cursor-not-allowed' 
+                    : 'text-blue-500 hover:bg-blue-50 active:scale-95'
+                }`}
+                aria-label="Previous letter"
               >
                 <ChevronLeft size={40} />
               </button>
 
-              <div className="flex-1 flex flex-col items-center gap-2">
+              <div className="flex-1 flex flex-col items-center gap-4">
                 <div 
                   onClick={() => speakLetter(alphabet[currentIndex])}
-                  className="text-9xl font-bold text-blue-500 cursor-pointer hover:scale-110 transition-transform"
+                  className="text-8xl sm:text-9xl font-bold text-blue-500 cursor-pointer hover:scale-110 transition-transform select-none"
+                  role="button"
+                  aria-label={`Pronounce letter ${alphabet[currentIndex]}`}
                 >
                   {alphabet[currentIndex]}
                 </div>
                 <button
                   onClick={toggleBookmark}
-                  className="text-blue-500 hover:text-blue-600"
+                  className="text-blue-500 hover:text-blue-600 transition-colors"
+                  aria-label={bookmarks.has(currentIndex) ? "Remove bookmark" : "Add bookmark"}
                 >
                   {bookmarks.has(currentIndex) ? 
                     <BookmarkCheck className="w-8 h-8" /> : 
@@ -154,7 +162,12 @@ export const AlphabetSpeechApp = () => {
               <button
                 onClick={handleNext}
                 disabled={currentFilteredIndex === filteredIndices.length - 1}
-                className={`p-4 rounded-full ${currentFilteredIndex === filteredIndices.length - 1 ? 'text-gray-300' : 'text-blue-500 hover:bg-blue-50'}`}
+                className={`p-4 rounded-full transition-all ${
+                  currentFilteredIndex === filteredIndices.length - 1 
+                    ? 'text-gray-300 cursor-not-allowed' 
+                    : 'text-blue-500 hover:bg-blue-50 active:scale-95'
+                }`}
+                aria-label="Next letter"
               >
                 <ChevronRight size={40} />
               </button>
@@ -162,7 +175,7 @@ export const AlphabetSpeechApp = () => {
 
             <Button
               onClick={handleRandom}
-              className="mt-4 flex items-center gap-2"
+              className="w-full sm:w-auto mt-4 flex items-center justify-center gap-2"
             >
               <Shuffle className="w-4 h-4" />
               Random Letter
@@ -174,7 +187,7 @@ export const AlphabetSpeechApp = () => {
                 return (
                   <div
                     key={letter}
-                    className={`relative ${
+                    className={`relative transition-all ${
                       index === currentIndex 
                         ? 'w-4' 
                         : 'w-2'
