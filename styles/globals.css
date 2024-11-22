@@ -7,8 +7,28 @@
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
   }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+  }
 }
- 
-body {
-  @apply bg-background text-foreground;
+
+/* Custom styles for mobile touch interactions */
+@media (max-width: 640px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Prevent text selection on interactive elements */
+.select-none {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
