@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Shuffle, Bookmark, Check as BookmarkCheck } from 'lucide-react';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
-import { Button } from './ui/button';
+import Button from './ui/button';
 import { Card, CardContent } from './ui/card';
 
 export const AlphabetSpeechApp = () => {
@@ -22,28 +22,43 @@ export const AlphabetSpeechApp = () => {
 
   const currentFilteredIndex = filteredIndices.indexOf(currentIndex);
 
+  const getModIndex = (index) => {
+    const len = filteredIndices.length;
+    return ((index % len) + len) % len;
+  };
+
   const speakLetter = (letter) => {
-    const utterance = new SpeechSynthesisUtterance(letter);
-    utterance.rate = 0.8;
-    utterance.pitch = 1;
+    const letterUtterance = new SpeechSynthesisUtterance(letter);
+    const phoneticMap = {
+      'A': 'ah', 'B': 'buh', 'C': 'kuh', 'D': 'duh', 'E': 'eh',
+      'F': 'fuh', 'G': 'guh', 'H': 'huh', 'I': 'ih', 'J': 'juh',
+      'K': 'kuh', 'L': 'lul', 'M': 'muh', 'N': 'nuh', 'O': 'oh',
+      'P': 'puh', 'Q': 'kwuh', 'R': 'ruh', 'S': 'suh', 'T': 'tuh',
+      'U': 'uh', 'V': 'vuh', 'W': 'wuh', 'X': 'ks', 'Y': 'yuh',
+      'Z': 'zuh'
+    };
+    
+    const phoneticUtterance = new SpeechSynthesisUtterance(phoneticMap[letter.toUpperCase()]);
+    letterUtterance.onend = () => window.speechSynthesis.speak(phoneticUtterance);
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    window.speechSynthesis.speak(letterUtterance);
+  };
+
+  const getAdjacentLetters = () => {
+    return {
+      prev2: alphabet[filteredIndices[getModIndex(currentFilteredIndex - 2)]],
+      prev1: alphabet[filteredIndices[getModIndex(currentFilteredIndex - 1)]],
+      next1: alphabet[filteredIndices[getModIndex(currentFilteredIndex + 1)]],
+      next2: alphabet[filteredIndices[getModIndex(currentFilteredIndex + 2)]]
+    };
   };
 
   const handlePrevious = () => {
-    if (currentFilteredIndex > 0) {
-      const newIndex = filteredIndices[currentFilteredIndex - 1];
-      setCurrentIndex(newIndex);
-      speakLetter(alphabet[newIndex]);
-    }
+    setCurrentIndex(filteredIndices[getModIndex(currentFilteredIndex - 1)]);
   };
 
   const handleNext = () => {
-    if (currentFilteredIndex < filteredIndices.length - 1) {
-      const newIndex = filteredIndices[currentFilteredIndex + 1];
-      setCurrentIndex(newIndex);
-      speakLetter(alphabet[newIndex]);
-    }
+    setCurrentIndex(filteredIndices[getModIndex(currentFilteredIndex + 1)]);
   };
 
   const handleRandom = () => {
@@ -51,7 +66,6 @@ export const AlphabetSpeechApp = () => {
     if (availableIndices.length > 0) {
       const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
       setCurrentIndex(randomIndex);
-      speakLetter(alphabet[randomIndex]);
     }
   };
 
@@ -65,6 +79,12 @@ export const AlphabetSpeechApp = () => {
       }
       return newBookmarks;
     });
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'ArrowLeft') handlePrevious();
+    if (e.key === 'ArrowRight') handleNext();
+    if (e.key === ' ') speakLetter(alphabet[currentIndex]);
   };
 
   const handleTouchStart = (e) => {
@@ -91,15 +111,24 @@ export const AlphabetSpeechApp = () => {
     }, { once: true });
   };
 
+  React.useEffect(() => {
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [currentIndex]);
+
+  const adjacentLetters = getAdjacentLetters();
+
   return (
-    <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8">
-      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 text-gray-800">Speaking Alphabet</h1>
+    <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8" onTouchStart={handleTouchStart}>
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 text-gray-800">
+        Speaking Alphabet
+      </h1>
       <Card>
-        <CardContent>
-          <div className="flex flex-col items-center space-y-6">
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <CardContent className="p-6">
+          <div className="flex flex-col space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center justify-between sm:justify-start space-x-4">
-                <Label htmlFor="case-switch" className="text-lg font-medium whitespace-nowrap">
+                <Label htmlFor="case-switch" className="text-lg">
                   {isUpperCase ? 'UPPERCASE' : 'lowercase'}
                 </Label>
                 <Switch
@@ -109,7 +138,7 @@ export const AlphabetSpeechApp = () => {
                 />
               </div>
               <div className="flex items-center justify-between sm:justify-end space-x-4">
-                <Label htmlFor="bookmark-switch" className="text-lg font-medium whitespace-nowrap">
+                <Label htmlFor="bookmark-switch" className="text-lg">
                   Bookmarks Only
                 </Label>
                 <Switch
@@ -121,36 +150,29 @@ export const AlphabetSpeechApp = () => {
               </div>
             </div>
 
-            <div 
-              className="w-full flex items-center justify-between gap-4 p-4"
-              onTouchStart={handleTouchStart}
-            >
+            <div className="flex items-center justify-between">
               <button
                 onClick={handlePrevious}
-                disabled={currentFilteredIndex === 0}
-                className={`p-4 rounded-full transition-all ${
-                  currentFilteredIndex === 0 
-                    ? 'text-gray-300 cursor-not-allowed' 
-                    : 'text-blue-500 hover:bg-blue-50 active:scale-95'
-                }`}
-                aria-label="Previous letter"
+                className="p-4 rounded-full transition-all text-blue-500 hover:bg-blue-50 active:scale-95 flex items-center"
               >
                 <ChevronLeft size={40} />
+                <div className="flex items-center ml-2">
+                  <span className="text-2xl opacity-25">{adjacentLetters.prev2}</span>
+                  <span className="text-4xl opacity-50 ml-2">{adjacentLetters.prev1}</span>
+                </div>
               </button>
 
-              <div className="flex-1 flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center">
                 <div 
                   onClick={() => speakLetter(alphabet[currentIndex])}
-                  className="text-8xl sm:text-9xl font-bold text-blue-500 cursor-pointer hover:scale-110 transition-transform select-none"
+                  className="text-8xl sm:text-9xl font-bold text-blue-500 cursor-pointer hover:scale-110 transition-all"
                   role="button"
-                  aria-label={`Pronounce letter ${alphabet[currentIndex]}`}
                 >
                   {alphabet[currentIndex]}
                 </div>
                 <button
                   onClick={toggleBookmark}
-                  className="text-blue-500 hover:text-blue-600 transition-colors"
-                  aria-label={bookmarks.has(currentIndex) ? "Remove bookmark" : "Add bookmark"}
+                  className="mt-4 text-blue-500 hover:text-blue-600"
                 >
                   {bookmarks.has(currentIndex) ? 
                     <BookmarkCheck className="w-8 h-8" /> : 
@@ -161,43 +183,35 @@ export const AlphabetSpeechApp = () => {
 
               <button
                 onClick={handleNext}
-                disabled={currentFilteredIndex === filteredIndices.length - 1}
-                className={`p-4 rounded-full transition-all ${
-                  currentFilteredIndex === filteredIndices.length - 1 
-                    ? 'text-gray-300 cursor-not-allowed' 
-                    : 'text-blue-500 hover:bg-blue-50 active:scale-95'
-                }`}
-                aria-label="Next letter"
+                className="p-4 rounded-full transition-all text-blue-500 hover:bg-blue-50 active:scale-95 flex items-center"
               >
+                <div className="flex items-center mr-2">
+                  <span className="text-4xl opacity-50">{adjacentLetters.next1}</span>
+                  <span className="text-2xl opacity-25 ml-2">{adjacentLetters.next2}</span>
+                </div>
                 <ChevronRight size={40} />
               </button>
             </div>
 
             <Button
               onClick={handleRandom}
-              className="w-full sm:w-auto mt-4 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto mx-auto flex items-center justify-center gap-2"
             >
               <Shuffle className="w-4 h-4" />
               Random Letter
             </Button>
 
-            <div className="w-full mt-8 flex justify-center gap-2 overflow-x-auto py-2">
+            <div className="flex justify-center gap-2">
               {alphabet.map((letter, index) => {
                 if (showOnlyBookmarks && !bookmarks.has(index)) return null;
                 return (
                   <div
                     key={letter}
-                    className={`relative transition-all ${
-                      index === currentIndex 
-                        ? 'w-4' 
-                        : 'w-2'
-                    }`}
+                    className={`relative ${index === currentIndex ? 'w-4' : 'w-2'}`}
                   >
                     <div
                       className={`h-2 rounded-full transition-all ${
-                        index === currentIndex 
-                          ? 'bg-blue-500' 
-                          : 'bg-gray-300'
+                        index === currentIndex ? 'bg-blue-500' : 'bg-gray-300'
                       }`}
                     />
                     {bookmarks.has(index) && (
