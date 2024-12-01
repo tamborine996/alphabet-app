@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Shuffle, Bookmark, Check as BookmarkCheck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { Label } from './ui/label';
-import Button from './ui/button';
-import { Card, CardContent } from './ui/card';
+import { Label } from '@/components/ui/label';
+import Button from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export const AlphabetSpeechApp = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isUpperCase, setIsUpperCase] = useState(true);
   const [bookmarks, setBookmarks] = useState(new Set());
   const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
+  const [touchStartX, setTouchStartX] = useState(null);
   
   const alphabet = Array.from({ length: 26 }, (_, i) => {
     const letter = String.fromCharCode(65 + i);
@@ -28,13 +29,15 @@ export const AlphabetSpeechApp = () => {
   };
 
   const handleLetterClick = (letter, isDoubleClick) => {
+    const utterance = new SpeechSynthesisUtterance();
+    utterance.rate = 0.8;
+    utterance.pitch = 1;
+
     if (isDoubleClick) {
-      // Letter sound only
-      const letterUtterance = new SpeechSynthesisUtterance(letter);
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(letterUtterance);
+      // Just say the letter name
+      utterance.text = letter;
     } else {
-      // Phonics sound only
+      // Phonics sound
       const phoneticMap = {
         'A': 'ae', // as in cat
         'B': 'buh',
@@ -63,10 +66,11 @@ export const AlphabetSpeechApp = () => {
         'Y': 'yuh',
         'Z': 'zuh'
       };
-      const phoneticUtterance = new SpeechSynthesisUtterance(phoneticMap[letter.toUpperCase()]);
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(phoneticUtterance);
+      utterance.text = phoneticMap[letter.toUpperCase()];
     }
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
   };
 
   const getAdjacentLetters = () => {
@@ -110,6 +114,27 @@ export const AlphabetSpeechApp = () => {
     if (e.key === ' ') handleLetterClick(alphabet[currentIndex], false);
   };
 
+  const handleTouchStart = (e) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e) => {
+    if (!touchStartX) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchStartX - touchEndX;
+    
+    if (Math.abs(diff) > 50) { // threshold for swipe
+      if (diff > 0) {
+        handleNext();
+      } else {
+        handlePrevious();
+      }
+    }
+    
+    setTouchStartX(null);
+  };
+
   React.useEffect(() => {
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
@@ -149,7 +174,11 @@ export const AlphabetSpeechApp = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-2 px-2">
+            <div 
+              className="flex items-center justify-between gap-2 px-2"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
               <button
                 onClick={handlePrevious}
                 className="p-2 rounded-full transition-all text-blue-500 hover:bg-blue-50 active:scale-95"
@@ -158,18 +187,15 @@ export const AlphabetSpeechApp = () => {
               </button>
 
               <div className="flex items-center justify-center gap-4">
-                <span className="text-3xl text-gray-400">{adjacentLetters.prev1}</span>
+                <span 
+                  className="text-3xl text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
+                  onClick={handlePrevious}
+                >
+                  {adjacentLetters.prev1}
+                </span>
                 <div className="flex flex-col items-center">
                   <div 
-                    onClick={(e) => {
-                      if (!e.detail || e.detail === 1) {
-                        setTimeout(() => {
-                          if (!e.detail || e.detail === 1) {
-                            handleLetterClick(alphabet[currentIndex], false);
-                          }
-                        }, 200);
-                      }
-                    }}
+                    onClick={() => handleLetterClick(alphabet[currentIndex], false)}
                     onDoubleClick={() => handleLetterClick(alphabet[currentIndex], true)}
                     className="text-8xl sm:text-9xl font-bold text-blue-500 cursor-pointer hover:scale-110 transition-all group relative"
                     role="button"
@@ -189,7 +215,12 @@ export const AlphabetSpeechApp = () => {
                     }
                   </button>
                 </div>
-                <span className="text-3xl text-gray-400">{adjacentLetters.next1}</span>
+                <span 
+                  className="text-3xl text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
+                  onClick={handleNext}
+                >
+                  {adjacentLetters.next1}
+                </span>
               </div>
 
               <button
