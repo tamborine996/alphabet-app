@@ -15,4 +15,4 @@ const Switch = React.forwardRef(({ className, ...props }, ref) => (
 
 Switch.displayName = "Switch";
 
-export default Switch;
+export { Switch };  // Changed to named export
