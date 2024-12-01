@@ -52,7 +52,7 @@ export const AlphabetSpeechApp = () => {
         'N': 'nuh',
         'O': 'oh', // as in hot
         'P': 'puh',
-        'Q': 'kwuh',
+        'Q': 'kwa',
         'R': 'ruh',
         'S': 'suh',
         'T': 'tuh',
