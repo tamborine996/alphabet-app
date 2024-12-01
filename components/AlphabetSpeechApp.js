@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Shuffle, Bookmark, Check as BookmarkCheck } from 'lucide-react';
-import Switch from './ui/switch';
+import { Switch } from '@/components/ui/switch';
 import { Label } from './ui/label';
 import Button from './ui/button';
 import { Card, CardContent } from './ui/card';
