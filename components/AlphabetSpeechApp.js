@@ -11,6 +11,8 @@ export const AlphabetSpeechApp = () => {
   const [bookmarks, setBookmarks] = useState(new Set());
   const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
   const [touchStartX, setTouchStartX] = useState(null);
+  const [pressTimer, setPressTimer] = useState(null);
+  const [isHolding, setIsHolding] = useState(false);
   
   const alphabet = Array.from({ length: 26 }, (_, i) => {
     const letter = String.fromCharCode(65 + i);
@@ -28,49 +30,38 @@ export const AlphabetSpeechApp = () => {
     return ((index % len) + len) % len;
   };
 
-  const handleLetterClick = (letter, isDoubleClick) => {
-    const utterance = new SpeechSynthesisUtterance();
-    utterance.rate = 0.8;
-    utterance.pitch = 1;
+  const handleLetterPress = (letter) => {
+    // Initial click plays letter sound
+    const letterUtterance = new SpeechSynthesisUtterance(letter);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(letterUtterance);
 
-    if (isDoubleClick) {
-      // Just say the letter name
-      utterance.text = letter;
-    } else {
-      // Phonics sound
+    // Start a timer for the hold
+    const timer = setTimeout(() => {
+      // After holding, play phonetic sound
       const phoneticMap = {
-        'A': 'ae', // as in cat
-        'B': 'buh',
-        'C': 'kuh',
-        'D': 'duh',
-        'E': 'eh', // as in bed
-        'F': 'fuh',
-        'G': 'guh',
-        'H': 'huh',
-        'I': 'ih', // as in sit
-        'J': 'juh',
-        'K': 'kuh',
-        'L': 'luh',
-        'M': 'muh',
-        'N': 'nuh',
-        'O': 'oh', // as in hot
-        'P': 'puh',
-        'Q': 'kwa',
-        'R': 'ruh',
-        'S': 'suh',
-        'T': 'tuh',
-        'U': 'uh', // as in cup
-        'V': 'vuh',
-        'W': 'wuh',
-        'X': 'ksuh',
-        'Y': 'yuh',
+        'A': 'ae', 'B': 'buh', 'C': 'kuh', 'D': 'duh', 'E': 'eh',
+        'F': 'fuh', 'G': 'guh', 'H': 'huh', 'I': 'ih', 'J': 'juh',
+        'K': 'kuh', 'L': 'luh', 'M': 'muh', 'N': 'nuh', 'O': 'oh',
+        'P': 'puh', 'Q': 'kwa', 'R': 'ruh', 'S': 'suh', 'T': 'tuh',
+        'U': 'uh', 'V': 'vuh', 'W': 'wuh', 'X': 'ksuh', 'Y': 'yuh',
         'Z': 'zuh'
       };
-      utterance.text = phoneticMap[letter.toUpperCase()];
-    }
+      const phoneticUtterance = new SpeechSynthesisUtterance(phoneticMap[letter.toUpperCase()]);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(phoneticUtterance);
+      setIsHolding(true);
+    }, 500); // 500ms hold time
 
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
+    setPressTimer(timer);
+  };
+
+  const handleLetterRelease = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      setPressTimer(null);
+    }
+    setIsHolding(false);
   };
 
   const getAdjacentLetters = () => {
@@ -111,7 +102,7 @@ export const AlphabetSpeechApp = () => {
   const handleKeyPress = (e) => {
     if (e.key === 'ArrowLeft') handlePrevious();
     if (e.key === 'ArrowRight') handleNext();
-    if (e.key === ' ') handleLetterClick(alphabet[currentIndex], false);
+    if (e.key === ' ') handleLetterPress(alphabet[currentIndex]);
   };
 
   const handleTouchStart = (e) => {
@@ -195,14 +186,18 @@ export const AlphabetSpeechApp = () => {
                 </span>
                 <div className="flex flex-col items-center">
                   <div 
-                    onClick={() => handleLetterClick(alphabet[currentIndex], false)}
-                    onDoubleClick={() => handleLetterClick(alphabet[currentIndex], true)}
-                    className="text-8xl sm:text-9xl font-bold text-blue-500 cursor-pointer hover:scale-110 transition-all group relative"
+                    onMouseDown={() => handleLetterPress(alphabet[currentIndex])}
+                    onMouseUp={handleLetterRelease}
+                    onMouseLeave={handleLetterRelease}
+                    onTouchStart={() => handleLetterPress(alphabet[currentIndex])}
+                    onTouchEnd={handleLetterRelease}
+                    className={`text-8xl sm:text-9xl font-bold text-blue-500 cursor-pointer transition-all group relative
+                      ${isHolding ? 'scale-95' : 'hover:scale-110'}`}
                     role="button"
                   >
                     {alphabet[currentIndex]}
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                      Click for phonics, double-click for letter
+                      Hold for phonics sound
                     </div>
                   </div>
                   <button
