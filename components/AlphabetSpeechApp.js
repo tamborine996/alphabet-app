@@ -15,6 +15,36 @@ export const AlphabetSpeechApp = () => {
   const [isSwiping, setIsSwiping] = useState(false);
   const [touchTimeout, setTouchTimeout] = useState(null);
   const [hasPlayedSound, setHasPlayedSound] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(true);
+
+  const phonicsWords = {
+    'A': 'apple',
+    'B': 'ball',
+    'C': 'cat',
+    'D': 'dog',
+    'E': 'egg',
+    'F': 'fish',
+    'G': 'goat',
+    'H': 'hat',
+    'I': 'igloo',
+    'J': 'jam',
+    'K': 'kite',
+    'L': 'lion',
+    'M': 'mouse',
+    'N': 'net',
+    'O': 'octopus',
+    'P': 'pen',
+    'Q': 'queen',
+    'R': 'rat',
+    'S': 'sun',
+    'T': 'tap',
+    'U': 'umbrella',
+    'V': 'van',
+    'W': 'web',
+    'X': 'box',
+    'Y': 'yak',
+    'Z': 'zip'
+  };
   
   const alphabet = Array.from({ length: 26 }, (_, i) => {
     const letter = String.fromCharCode(65 + i);
@@ -30,6 +60,29 @@ export const AlphabetSpeechApp = () => {
   const getModIndex = (index) => {
     const len = filteredIndices.length;
     return ((index % len) + len) % len;
+  };
+
+  const speakPhonicsWord = (letter) => {
+    const word = phonicsWords[letter.toUpperCase()];
+    if (word) {
+      const phoneticMap = {
+        'A': 'ae', 'B': 'buh', 'C': 'kuh', 'D': 'duh', 'E': 'eh',
+        'F': 'fuh', 'G': 'guh', 'H': 'huh', 'I': 'ih', 'J': 'juh',
+        'K': 'kuh', 'L': 'luh', 'M': 'muh', 'N': 'nuh', 'O': 'oh',
+        'P': 'puh', 'Q': 'kwa', 'R': 'ruh', 'S': 'suh', 'T': 'tuh',
+        'U': 'uh', 'V': 'vuh', 'W': 'wuh', 'X': 'ksuh', 'Y': 'yuh',
+        'Z': 'zuh'
+      };
+      
+      const phoneticSound = new SpeechSynthesisUtterance(phoneticMap[letter.toUpperCase()]);
+      const isFor = new SpeechSynthesisUtterance(`is for ${word}`);
+      
+      window.speechSynthesis.cancel();
+      phoneticSound.onend = () => {
+        window.speechSynthesis.speak(isFor);
+      };
+      window.speechSynthesis.speak(phoneticSound);
+    }
   };
 
   const getAdjacentLetters = () => {
@@ -92,7 +145,7 @@ export const AlphabetSpeechApp = () => {
         setHasPlayedSound(true);
         setIsHolding(true);
       }
-    }, 400);  // Increased delay for better distinction
+    }, 400);
     
     setTouchTimeout(timeout);
   };
@@ -144,6 +197,15 @@ export const AlphabetSpeechApp = () => {
       document.removeEventListener('keydown', handleKeyPress);
       if (touchTimeout) clearTimeout(touchTimeout);
     };
+  }, [currentIndex]);
+
+  React.useEffect(() => {
+    setShowTooltip(true);
+    const timer = setTimeout(() => {
+      setShowTooltip(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, [currentIndex]);
 
   const adjacentLetters = getAdjacentLetters();
@@ -209,9 +271,11 @@ export const AlphabetSpeechApp = () => {
                     role="button"
                   >
                     {alphabet[currentIndex]}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap select-none">
-                      Hold for phonics sound
-                    </div>
+                    {showTooltip && (
+                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap select-none">
+                        Hold for phonics sound
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={toggleBookmark}
@@ -269,9 +333,48 @@ export const AlphabetSpeechApp = () => {
                 );
               })}
             </div>
+
+            <div className="flex justify-center mt-8">
+              <div className="flex flex-col items-center">
+                {currentIndex === 0 ? (
+                  <>
+                    <svg 
+                      viewBox="0 0 100 100" 
+                      className="w-20 h-20 cursor-pointer hover:scale-110 transition-all"
+                      onClick={() => speakPhonicsWord(alphabet[currentIndex])}
+                      role="button"
+                      aria-label={`${alphabet[currentIndex]} is for apple`}
+                    >
+                      <circle cx="50" cy="50" r="45" fill="#ff6b6b"/>
+                <path d="M50,20 C60,20 70,30 70,45 C70,60 60,80 50,80 C40,80 30,60 30,45 C30,30 40,20 50,20" fill="#4a9e5c"/>
+                      <path d="M50,25 L55,15 L60,20" fill="#4a9e5c" stroke="#4a9e5c" strokeWidth="2"/>
+                    </svg>
+                    <span className="mt-2 text-gray-600 font-medium">apple</span>
+                  </>
+                ) : (
+                  <>
+                    <div 
+                      className="w-20 h-20 bg-gray-100 rounded-lg cursor-pointer hover:scale-110 transition-all flex items-center justify-center"
+                      onClick={() => speakPhonicsWord(alphabet[currentIndex])}
+                      role="button"
+                      aria-label={`${alphabet[currentIndex]} is for ${phonicsWords[alphabet[currentIndex].toUpperCase()]}`}
+                    >
+                      <span className="text-4xl text-gray-400">
+                        {alphabet[currentIndex].toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="mt-2 text-gray-600 font-medium">
+                      {phonicsWords[alphabet[currentIndex].toUpperCase()]}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
           </div>
         </CardContent>
       </Card>
     </div>
   );
 };
+Last edited just now
