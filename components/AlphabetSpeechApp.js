@@ -13,6 +13,8 @@ export const AlphabetSpeechApp = () => {
   const [touchStartX, setTouchStartX] = useState(null);
   const [pressTimer, setPressTimer] = useState(null);
   const [isHolding, setIsHolding] = useState(false);
+  const [isSwiping, setIsSwiping] = useState(false);
+  const [touchTimeout, setTouchTimeout] = useState(null);
   
   const alphabet = Array.from({ length: 26 }, (_, i) => {
     const letter = String.fromCharCode(65 + i);
@@ -31,27 +33,21 @@ export const AlphabetSpeechApp = () => {
   };
 
   const handleLetterPress = (letter) => {
-    // Initial click plays letter sound
-    const letterUtterance = new SpeechSynthesisUtterance(letter);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(letterUtterance);
+    const phoneticMap = {
+      'A': 'ae', 'B': 'buh', 'C': 'kuh', 'D': 'duh', 'E': 'eh',
+      'F': 'fuh', 'G': 'guh', 'H': 'huh', 'I': 'ih', 'J': 'juh',
+      'K': 'kuh', 'L': 'luh', 'M': 'muh', 'N': 'nuh', 'O': 'oh',
+      'P': 'puh', 'Q': 'kwa', 'R': 'ruh', 'S': 'suh', 'T': 'tuh',
+      'U': 'uh', 'V': 'vuh', 'W': 'wuh', 'X': 'ksuh', 'Y': 'yuh',
+      'Z': 'zuh'
+    };
 
-    // Start a timer for the hold
     const timer = setTimeout(() => {
-      // After holding, play phonetic sound
-      const phoneticMap = {
-        'A': 'ae', 'B': 'buh', 'C': 'kuh', 'D': 'duh', 'E': 'eh',
-        'F': 'fuh', 'G': 'guh', 'H': 'huh', 'I': 'ih', 'J': 'juh',
-        'K': 'kuh', 'L': 'luh', 'M': 'muh', 'N': 'nuh', 'O': 'oh',
-        'P': 'puh', 'Q': 'kwa', 'R': 'ruh', 'S': 'suh', 'T': 'tuh',
-        'U': 'uh', 'V': 'vuh', 'W': 'wuh', 'X': 'ksuh', 'Y': 'yuh',
-        'Z': 'zuh'
-      };
       const phoneticUtterance = new SpeechSynthesisUtterance(phoneticMap[letter.toUpperCase()]);
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(phoneticUtterance);
       setIsHolding(true);
-    }, 500); // 500ms hold time
+    }, 500);
 
     setPressTimer(timer);
   };
@@ -107,6 +103,31 @@ export const AlphabetSpeechApp = () => {
 
   const handleTouchStart = (e) => {
     setTouchStartX(e.touches[0].clientX);
+    
+    const timeout = setTimeout(() => {
+      if (!isSwiping) {
+        handleLetterPress(alphabet[currentIndex]);
+      }
+    }, 200);
+    
+    setTouchTimeout(timeout);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartX) return;
+    
+    const diff = touchStartX - e.touches[0].clientX;
+    if (Math.abs(diff) > 10) {
+      setIsSwiping(true);
+      if (touchTimeout) {
+        clearTimeout(touchTimeout);
+        setTouchTimeout(null);
+      }
+      if (pressTimer) {
+        clearTimeout(pressTimer);
+        setPressTimer(null);
+      }
+    }
   };
 
   const handleTouchEnd = (e) => {
@@ -115,27 +136,47 @@ export const AlphabetSpeechApp = () => {
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX - touchEndX;
     
-    if (Math.abs(diff) > 50) { // threshold for swipe
+    if (isSwiping && Math.abs(diff) > 50) {
       if (diff > 0) {
         handleNext();
       } else {
         handlePrevious();
       }
+    } else if (!isSwiping) {
+      const letterUtterance = new SpeechSynthesisUtterance(alphabet[currentIndex]);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(letterUtterance);
+    }
+    
+    if (touchTimeout) {
+      clearTimeout(touchTimeout);
+      setTouchTimeout(null);
+    }
+    
+    if (pressTimer) {
+      clearTimeout(pressTimer);
+      setPressTimer(null);
     }
     
     setTouchStartX(null);
+    setIsSwiping(false);
+    setIsHolding(false);
   };
 
   React.useEffect(() => {
     document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+      if (pressTimer) clearTimeout(pressTimer);
+      if (touchTimeout) clearTimeout(touchTimeout);
+    };
   }, [currentIndex]);
 
   const adjacentLetters = getAdjacentLetters();
 
   return (
     <div className="max-w-lg mx-auto px-4 sm:px-6 lg:px-8">
-      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 text-gray-800">
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-center mb-8 text-gray-800 select-none">
         Speaking Alphabet
       </h1>
       <Card>
@@ -143,7 +184,7 @@ export const AlphabetSpeechApp = () => {
           <div className="flex flex-col space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center justify-between sm:justify-start space-x-4">
-                <Label htmlFor="case-switch" className="text-lg">
+                <Label htmlFor="case-switch" className="text-lg select-none">
                   {isUpperCase ? 'UPPERCASE' : 'lowercase'}
                 </Label>
                 <Switch
@@ -153,7 +194,7 @@ export const AlphabetSpeechApp = () => {
                 />
               </div>
               <div className="flex items-center justify-between sm:justify-end space-x-4">
-                <Label htmlFor="bookmark-switch" className="text-lg">
+                <Label htmlFor="bookmark-switch" className="text-lg select-none">
                   Bookmarks Only
                 </Label>
                 <Switch
@@ -165,38 +206,36 @@ export const AlphabetSpeechApp = () => {
               </div>
             </div>
 
-            <div 
-              className="flex items-center justify-between gap-2 px-2"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
+            <div className="flex items-center justify-between gap-2 px-2">
               <button
                 onClick={handlePrevious}
-                className="p-2 rounded-full transition-all text-blue-500 hover:bg-blue-50 active:scale-95"
+                className="p-2 rounded-full transition-all text-blue-500 hover:bg-blue-50 active:scale-95 select-none"
               >
                 <ChevronLeft size={40} />
               </button>
 
               <div className="flex items-center justify-center gap-4">
                 <span 
-                  className="text-3xl text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
+                  className="text-3xl text-gray-400 cursor-pointer hover:text-gray-600 transition-colors select-none"
                   onClick={handlePrevious}
                 >
                   {adjacentLetters.prev1}
                 </span>
                 <div className="flex flex-col items-center">
                   <div 
-                    onMouseDown={() => handleLetterPress(alphabet[currentIndex])}
-                    onMouseUp={handleLetterRelease}
-                    onMouseLeave={handleLetterRelease}
-                    onTouchStart={() => handleLetterPress(alphabet[currentIndex])}
-                    onTouchEnd={handleLetterRelease}
-                    className={`text-8xl sm:text-9xl font-bold text-blue-500 cursor-pointer transition-all group relative
-                      ${isHolding ? 'scale-95' : 'hover:scale-110'}`}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    className={`
+                      text-8xl sm:text-9xl font-bold text-blue-500 
+                      cursor-pointer transition-all group relative
+                      select-none touch-none
+                      ${isHolding ? 'scale-95' : 'hover:scale-110'}
+                    `}
                     role="button"
                   >
                     {alphabet[currentIndex]}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap select-none">
                       Hold for phonics sound
                     </div>
                   </div>
@@ -211,7 +250,7 @@ export const AlphabetSpeechApp = () => {
                   </button>
                 </div>
                 <span 
-                  className="text-3xl text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
+                  className="text-3xl text-gray-400 cursor-pointer hover:text-gray-600 transition-colors select-none"
                   onClick={handleNext}
                 >
                   {adjacentLetters.next1}
@@ -220,7 +259,7 @@ export const AlphabetSpeechApp = () => {
 
               <button
                 onClick={handleNext}
-                className="p-2 rounded-full transition-all text-blue-500 hover:bg-blue-50 active:scale-95"
+                className="p-2 rounded-full transition-all text-blue-500 hover:bg-blue-50 active:scale-95 select-none"
               >
                 <ChevronRight size={40} />
               </button>
@@ -231,7 +270,7 @@ export const AlphabetSpeechApp = () => {
               className="w-full sm:w-auto mx-auto flex items-center justify-center gap-2"
             >
               <Shuffle className="w-4 h-4" />
-              Random Letter
+              <span className="select-none">Random Letter</span>
             </Button>
 
             <div className="flex justify-center gap-2">
