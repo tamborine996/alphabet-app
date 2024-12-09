@@ -346,7 +346,7 @@ export const AlphabetSpeechApp = () => {
                       aria-label={`${alphabet[currentIndex]} is for apple`}
                     >
                       <circle cx="50" cy="50" r="45" fill="#ff6b6b"/>
-                <path d="M50,20 C60,20 70,30 70,45 C70,60 60,80 50,80 C40,80 30,60 30,45 C30,30 40,20 50,20" fill="#4a9e5c"/>
+                      <path d="M50,20 C60,20 70,30 70,45 C70,60 60,80 50,80 C40,80 30,60 30,45 C30,30 40,20 50,20" fill="#4a9e5c"/>
                       <path d="M50,25 L55,15 L60,20" fill="#4a9e5c" stroke="#4a9e5c" strokeWidth="2"/>
                     </svg>
                     <span className="mt-2 text-gray-600 font-medium">apple</span>
@@ -377,4 +377,3 @@ export const AlphabetSpeechApp = () => {
     </div>
   );
 };
-Last edited just now
