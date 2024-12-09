@@ -11,10 +11,10 @@ export const AlphabetSpeechApp = () => {
   const [bookmarks, setBookmarks] = useState(new Set());
   const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
   const [touchStartX, setTouchStartX] = useState(null);
-  const [pressTimer, setPressTimer] = useState(null);
   const [isHolding, setIsHolding] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [touchTimeout, setTouchTimeout] = useState(null);
+  const [hasPlayedSound, setHasPlayedSound] = useState(false);
   
   const alphabet = Array.from({ length: 26 }, (_, i) => {
     const letter = String.fromCharCode(65 + i);
@@ -30,34 +30,6 @@ export const AlphabetSpeechApp = () => {
   const getModIndex = (index) => {
     const len = filteredIndices.length;
     return ((index % len) + len) % len;
-  };
-
-  const handleLetterPress = (letter) => {
-    const phoneticMap = {
-      'A': 'ae', 'B': 'buh', 'C': 'kuh', 'D': 'duh', 'E': 'eh',
-      'F': 'fuh', 'G': 'guh', 'H': 'huh', 'I': 'ih', 'J': 'juh',
-      'K': 'kuh', 'L': 'luh', 'M': 'muh', 'N': 'nuh', 'O': 'oh',
-      'P': 'puh', 'Q': 'kwa', 'R': 'ruh', 'S': 'suh', 'T': 'tuh',
-      'U': 'uh', 'V': 'vuh', 'W': 'wuh', 'X': 'ksuh', 'Y': 'yuh',
-      'Z': 'zuh'
-    };
-
-    const timer = setTimeout(() => {
-      const phoneticUtterance = new SpeechSynthesisUtterance(phoneticMap[letter.toUpperCase()]);
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(phoneticUtterance);
-      setIsHolding(true);
-    }, 500);
-
-    setPressTimer(timer);
-  };
-
-  const handleLetterRelease = () => {
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
-    }
-    setIsHolding(false);
   };
 
   const getAdjacentLetters = () => {
@@ -98,17 +70,29 @@ export const AlphabetSpeechApp = () => {
   const handleKeyPress = (e) => {
     if (e.key === 'ArrowLeft') handlePrevious();
     if (e.key === 'ArrowRight') handleNext();
-    if (e.key === ' ') handleLetterPress(alphabet[currentIndex]);
   };
 
   const handleTouchStart = (e) => {
     setTouchStartX(e.touches[0].clientX);
+    setHasPlayedSound(false);
     
     const timeout = setTimeout(() => {
       if (!isSwiping) {
-        handleLetterPress(alphabet[currentIndex]);
+        const phoneticMap = {
+          'A': 'ae', 'B': 'buh', 'C': 'kuh', 'D': 'duh', 'E': 'eh',
+          'F': 'fuh', 'G': 'guh', 'H': 'huh', 'I': 'ih', 'J': 'juh',
+          'K': 'kuh', 'L': 'luh', 'M': 'muh', 'N': 'nuh', 'O': 'oh',
+          'P': 'puh', 'Q': 'kwa', 'R': 'ruh', 'S': 'suh', 'T': 'tuh',
+          'U': 'uh', 'V': 'vuh', 'W': 'wuh', 'X': 'ksuh', 'Y': 'yuh',
+          'Z': 'zuh'
+        };
+        const phoneticUtterance = new SpeechSynthesisUtterance(phoneticMap[alphabet[currentIndex].toUpperCase()]);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(phoneticUtterance);
+        setHasPlayedSound(true);
+        setIsHolding(true);
       }
-    }, 200);
+    }, 400);  // Increased delay for better distinction
     
     setTouchTimeout(timeout);
   };
@@ -122,10 +106,6 @@ export const AlphabetSpeechApp = () => {
       if (touchTimeout) {
         clearTimeout(touchTimeout);
         setTouchTimeout(null);
-      }
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        setPressTimer(null);
       }
     }
   };
@@ -142,7 +122,7 @@ export const AlphabetSpeechApp = () => {
       } else {
         handlePrevious();
       }
-    } else if (!isSwiping) {
+    } else if (!isSwiping && !hasPlayedSound) {
       const letterUtterance = new SpeechSynthesisUtterance(alphabet[currentIndex]);
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(letterUtterance);
@@ -151,11 +131,6 @@ export const AlphabetSpeechApp = () => {
     if (touchTimeout) {
       clearTimeout(touchTimeout);
       setTouchTimeout(null);
-    }
-    
-    if (pressTimer) {
-      clearTimeout(pressTimer);
-      setPressTimer(null);
     }
     
     setTouchStartX(null);
@@ -167,7 +142,6 @@ export const AlphabetSpeechApp = () => {
     document.addEventListener('keydown', handleKeyPress);
     return () => {
       document.removeEventListener('keydown', handleKeyPress);
-      if (pressTimer) clearTimeout(pressTimer);
       if (touchTimeout) clearTimeout(touchTimeout);
     };
   }, [currentIndex]);
